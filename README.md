@@ -7,6 +7,11 @@
 Sereno is an open source ChatOps that can be integrated with Slack to help and assist you during an incident.
 Sereno needs to be deployed in AWS Lambda and it uses DynamoDB
 
+You can also directly install Sereno for Slack in your workspace
+
+[<img alt="Add to Slack" height="35" width="129" src="https://platform.slack-edge.com/img/add_to_slack.png" srcset="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x">](https://slack.com/oauth/v2/authorize?scope=incoming-webhook,app_mentions:read,channels:history,chat:write,commands&client_id=1129483761414.1582197345009&redirect_uri=https://api.sereno.app/slack/auth)
+
+
 ### Features
 * Integrates with Zoom and Jira (more to come!) freeing engineers from having to deal with the common steps needed during the start of an incident
 * Creates an incident slack channel whenever a new incident is opened 
