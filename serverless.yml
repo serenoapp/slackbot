@@ -1,0 +1,193 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: slackbot
+# app and org for use with dashboard.serverless.com
+#app: your-app-name
+#org: your-org-name
+
+plugins:
+ - serverless-python-requirements
+ - serverless-wsgi
+ - serverless-dynamodb-local
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+frameworkVersion: '2'
+
+custom:
+  wsgi:
+    app: functions.handler.app
+    pythonBin: python3
+    packRequirements: false
+    pythonRequirements:
+      dockerizePip: non-linux
+  url:
+    dev: https://905d09d9d54f.ngrok.io
+    staging: https://j49wh0z688.execute-api.us-east-1.amazonaws.com/staging
+    prod: https://api.sereno.app
+  dynamodb:
+    start:
+      migrate: true
+      inMemory: false
+    stages:
+      - dev
+      - staging
+      - prod
+  database:
+    usersTableName:
+      dev: users-table-dev
+      staging: users-table-staging
+      prod: users-table-prod
+    incidentsTableName:
+      dev: incidents-table-dev
+      staging: incidents-table-staging
+      prod: incidents-table-prod
+  slack:
+    signingSecret:
+      dev: ${ssm:/sereno/staging/slack/signingSecret}
+      staging: ${ssm:/sereno/staging/slack/signingSecret}
+      prod: ${ssm:/sereno/prod/slack/signingSecret}
+    clientId:
+      dev: ${ssm:/sereno/staging/slack/clientId}
+      staging: ${ssm:/sereno/staging/slack/clientId}
+      prod: ${ssm:/sereno/prod/slack/clientId}
+    clientSecret:
+      dev: ${ssm:/sereno/staging/slack/secret}
+      staging: ${ssm:/sereno/staging/slack/secret}
+      prod: ${ssm:/sereno/prod/slack/secret}
+  jira:
+    clientId:
+      dev: ${ssm:/sereno/staging/jira/clientId}
+      staging: ${ssm:/sereno/staging/jira/clientId}
+      prod: ${ssm:/sereno/prod/jira/clientId}
+    clientSecret:
+      dev: ${ssm:/sereno/staging/jira/clientSecret}
+      staging: ${ssm:/sereno/staging/jira/clientSecret}
+      prod: ${ssm:/sereno/prod/jira/clientSecret}
+    redirectUrl:
+      dev: ${self:custom.url.dev}/jira/auth
+      staging: ${self:custom.url.staging}/jira/auth
+      prod: ${self:custom.url.prod}/jira/auth
+  zoom:
+    clientId:
+      dev: ${ssm:/sereno/staging/zoom/clientId}
+      staging: ${ssm:/sereno/staging/zoom/clientId}
+      prod: ${ssm:/sereno/prod/zoom/clientId}
+    clientSecret:
+      dev: ${ssm:/sereno/staging/zoom/clientSecret}
+      staging: ${ssm:/sereno/staging/zoom/clientSecret}
+      prod: ${ssm:/sereno/prod/zoom/clientSecret}
+    redirectUrl:
+      dev: ${self:custom.url.dev}/zoom/auth
+      staging: ${self:custom.url.staging}/zoom/auth
+      prod: ${self:custom.url.prod}/zoom/auth
+
+provider:
+  name: aws
+  runtime: python3.7
+  stage: ${opt:stage,'dev'}
+  region: us-east-1
+  environment:
+    STAGE: ${self:provider.stage}
+    USERS_TABLE: ${self:custom.database.usersTableName.${self:provider.stage}}
+    INCIDENTS_TABLE: ${self:custom.database.incidentsTableName.${self:provider.stage}}
+    ZOOM_CLIENT_ID: ${self:custom.zoom.clientId.${self:provider.stage}}
+    ZOOM_CLIENT_SECRET: ${self:custom.zoom.clientSecret.${self:provider.stage}}
+    JIRA_CLIENT_ID: ${self:custom.jira.clientId.${self:provider.stage}}
+    JIRA_CLIENT_SECRET: ${self:custom.jira.clientSecret.${self:provider.stage}}
+    ZOOM_REDIRECT_URI: ${self:custom.zoom.redirectUrl.${self:provider.stage}}
+    JIRA_REDIRECT_URL: ${self:custom.jira.redirectUrl.${self:provider.stage}}
+    SLACK_SIGNING_SECRET: ${self:custom.slack.signingSecret.${self:provider.stage}}
+    SLACK_CLIENT_ID: ${self:custom.slack.clientId.${self:provider.stage}}
+    SLACK_CLIENT_SECRET: ${self:custom.slack.clientSecret.${self:provider.stage}}
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - lambda:InvokeFunction
+      Resource: '*'
+
+# you can add packaging information here
+package:
+#  include:
+#    - include-me.py
+#    - include-me-dir/**
+ exclude:
+  ${file(./serverless-package-excludes.yml)}
+
+functions:
+  slack:
+    handler: wsgi_handler.handler
+    maximumRetryAttempts: 0
+    events:
+        - http: ANY /
+        - http: 'ANY {proxy+}'
+  mention:
+    handler: functions/mention.handle_mention
+    maximumRetryAttempts: 0
+  message:
+    handler: functions/message.handle_message
+    maximumRetryAttempts: 0
+  command:
+    handler: functions/commands.command_handler
+    maximumRetryAttempts: 0
+  interactive:
+    handler: functions/interaction.interaction_handler
+    maximumRetryAttempts: 0
+
+# you can add CloudFormation resource templates here
+resources:
+  Resources:
+    UsersDynamoDBTable:
+     Type: 'AWS::DynamoDB::Table'
+     Properties:
+      AttributeDefinitions:
+       -
+        AttributeName: teamId
+        AttributeType: S
+      KeySchema:
+       -
+        AttributeName: teamId
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      TableName: ${self:custom.database.usersTableName.${self:provider.stage}}
+    IncidentsDynamoDBTable:
+     Type: 'AWS::DynamoDB::Table'
+     Properties:
+      AttributeDefinitions:
+       -
+        AttributeName: teamId
+        AttributeType: S
+       -
+        AttributeName: incidentId
+        AttributeType: S
+      KeySchema:
+       -
+        AttributeName: teamId
+        KeyType: HASH
+       -
+        AttributeName: incidentId
+        KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      TableName: ${self:custom.database.incidentsTableName.${self:provider.stage}}
+

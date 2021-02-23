@@ -1,0 +1,49 @@
+{
+    "users-table-dev": [
+        {
+            "PutRequest": {
+                "Item": {
+                    "teamId": {
+                        "S": "T013TE7NDC6"
+                    },
+                    "access_token": {
+                        "S": "YOUR ACCESS TOKEN"
+                    },
+                    "apps": {
+                        "M": {
+                            "jira": {
+                                "M": {
+                                    "access_token": {
+                                        "S": "YOUR JIRA ACCESS TOKEN"
+                                    },
+                                    "refresh_token": {
+                                        "S": "YOUR JIRA REFRESH TOKEN"
+                                    },
+                                    "expiry_date": {
+                                        "S": "2021-01-25 21:59:15"
+                                    },
+                                    "id": {
+                                        "S": "piraidev"
+                                    }
+                                }
+                            },
+                            "zoom": {
+                                "M": {
+                                    "access_token": {
+                                        "S": "YOUR ZOOM ACCESS TOKEN"
+                                    },
+                                    "refresh_token": {
+                                        "S": "YOUR ZOOM REFRESH TOKEN"
+                                    },
+                                    "expiry_date": {
+                                        "S": "2021-01-26 16:54:37"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}
