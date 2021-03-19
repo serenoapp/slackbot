@@ -17,11 +17,9 @@ from utils.dynamo import DynamoUtils
 from services.oauth_services.slack_oauth_service import SlackOauthService
 from services.oauth_services.jira_oauth_service import JiraOauthService
 from services.oauth_services.zoom_oauth_service import ZoomOauthService
-
 from functions.invoke import invoke_lambda
 
 app = Flask(__name__)
-
 SLACK_SIGNING_SECRET = os.environ["SLACK_SIGNING_SECRET"]
 STAGE = os.environ["STAGE"]
 slack_events_adapter = SlackEventAdapter(SLACK_SIGNING_SECRET, "/slack/events", app)
@@ -40,6 +38,15 @@ def is_alive():
     """Test endpoint"""
     return "Im up!"
 
+
+@app.route("/contact", methods=['POST'])
+def contact():
+    """Log contact email"""
+    data = request.data
+    dataJson = json.loads(data.decode('utf-8'))
+    email = dataJson.get("email")
+    logger.info(f"Contact is: {email}")
+    return "done"
 
 @app.route("/signin")
 def signin():
